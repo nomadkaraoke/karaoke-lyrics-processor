@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "karaoke-lyrics-processor"
-version = "0.1.0"
+version = "0.1.1"
 description = "Process song lyrics to prepare them for karaoke video production, e.g. by splitting long lines"
 authors = ["Andrew Beveridge <andrew@beveridge.uk>"]
 license = "MIT"
