@@ -1,5 +1,7 @@
 # Karaoke Lyrics Processor 🎶 ✍️
 
+![PyPI - Version](https://img.shields.io/pypi/v/karaoke-lyrics-processor)
+
 Karaoke Lyrics Processor is a tool to prepare song lyrics for karaoke video production. 
 
 It processes lyrics by splitting long lines, handling parentheses, and ensuring that each line fits within a specified maximum length. 
