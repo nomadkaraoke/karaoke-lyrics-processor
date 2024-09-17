@@ -1,6 +1,7 @@
 import re
 import logging
 import pyperclip
+import unicodedata
 
 
 class KaraokeLyricsProcessor:
@@ -87,11 +88,29 @@ class KaraokeLyricsProcessor:
             self.logger.debug(f"Line is still too long, forcibly splitting at position {forced_split_point}")
             return forced_split_point
 
+    def replace_non_printable_spaces(self, text):
+        """
+        Replace non-printable space-like characters, tabs, and other whitespace with regular spaces,
+        excluding newline characters.
+        """
+        self.logger.debug(f"Replacing non-printable spaces in: {text}")
+        # Define a pattern for space-like characters, including tabs and other whitespace, but excluding newlines
+        space_pattern = r"[^\S\n\r]|\u00A0|\u1680|\u2000-\u200A|\u202F|\u205F|\u3000"
+        # Replace matched characters with a regular space
+        cleaned_text = re.sub(space_pattern, " ", text)
+        # Remove leading/trailing spaces and collapse multiple spaces into one, preserving newlines
+        cleaned_text = re.sub(r" +", " ", cleaned_text).strip()
+        self.logger.debug(f"Text after replacing non-printable spaces: {cleaned_text}")
+        return cleaned_text
+
     def process_line(self, line):
         """
         Process a single line to ensure it's within the maximum length,
-        and handle parentheses.
+        handle parentheses, and replace non-printable spaces.
         """
+        # Replace non-printable spaces at the beginning
+        line = self.replace_non_printable_spaces(line)
+
         processed_lines = []
         iteration_count = 0
         max_iterations = 100  # Failsafe limit
@@ -152,6 +171,9 @@ class KaraokeLyricsProcessor:
             iteration_count += 1
 
         processed_lyrics_text = "\n".join(lyrics_lines)
+
+        # Final pass to replace any remaining non-printable spaces
+        processed_lyrics_text = self.replace_non_printable_spaces(processed_lyrics_text)
 
         self.processed_lyrics_text = processed_lyrics_text
         pyperclip.copy(processed_lyrics_text)

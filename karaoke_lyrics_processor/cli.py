@@ -48,7 +48,8 @@ def main():
     if args.output:
         output_filename = args.output
     else:
-        output_filename = f"{filename_parts[0]} (Lyrics Processed).{filename_parts[1]}"
+        base_name = filename_parts[0].replace(" (Lyrics)", "")
+        output_filename = f"{base_name} (Lyrics Processed).{filename_parts[1]}"
 
     processor = KaraokeLyricsProcessor(
         log_level=log_level,
