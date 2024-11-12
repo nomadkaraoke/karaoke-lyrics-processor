@@ -82,11 +82,19 @@ class KaraokeLyricsProcessor:
                 self.logger.debug(f"Splitting at middle word index: {mid_word_index}")
                 return split_at_middle
 
-        # If the line is still too long, forcibly split at the maximum length
-        forced_split_point = self.max_line_length
-        if len(line) > forced_split_point:
-            self.logger.debug(f"Line is still too long, forcibly splitting at position {forced_split_point}")
-            return forced_split_point
+        # If the line is still too long, find the last space before max_line_length
+        if len(line) > self.max_line_length:
+            last_space = line.rfind(' ', 0, self.max_line_length)
+            if last_space != -1:
+                self.logger.debug(f"Splitting at last space before max_line_length: {last_space}")
+                return last_space
+            else:
+                # If no space is found, split at max_line_length
+                self.logger.debug(f"No space found, forcibly splitting at max_line_length: {self.max_line_length}")
+                return self.max_line_length
+
+        # If the line is shorter than max_line_length, return its length
+        return len(line)
 
     def replace_non_printable_spaces(self, text):
         """
