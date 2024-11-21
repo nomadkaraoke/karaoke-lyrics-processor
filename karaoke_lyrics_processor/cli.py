@@ -61,7 +61,8 @@ def main():
     processor.process()
     processor.write_to_output_file()
 
-    logger.info(f"Lyrics processing complete, lyrics written to output file: {output_filename}")
+    output_file = processor.output_filename
+    logger.info(f"Lyrics processing complete, lyrics written to output file: {output_file}")
 
 
 if __name__ == "__main__":

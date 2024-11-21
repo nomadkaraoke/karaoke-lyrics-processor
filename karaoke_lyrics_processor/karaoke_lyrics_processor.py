@@ -2,6 +2,9 @@ import re
 import logging
 import pyperclip
 import unicodedata
+import docx2txt
+from striprtf.striprtf import rtf_to_text
+import os
 
 
 class KaraokeLyricsProcessor:
@@ -36,13 +39,44 @@ class KaraokeLyricsProcessor:
         if input_lyrics_text is not None and input_filename is None:
             self.input_lyrics_lines = input_lyrics_text.splitlines()
         elif input_filename is not None and input_lyrics_text is None:
-            self.input_lyrics_lines = self.read_input_lyrics_file()
+            self.input_lyrics_lines = self.read_input_file()
         else:
             raise ValueError("Either input_lyrics or input_filename must be set, but not both.")
 
-    def read_input_lyrics_file(self):
-        with open(self.input_filename, "r") as infile:
-            return infile.readlines()
+    def read_input_file(self):
+        file_extension = os.path.splitext(self.input_filename)[1].lower()
+
+        if file_extension == ".txt":
+            return self.read_txt_file()
+        elif file_extension in [".docx", ".doc"]:
+            return self.read_doc_file()
+        elif file_extension == ".rtf":
+            return self.read_rtf_file()
+        else:
+            raise ValueError(f"Unsupported file format: {file_extension}")
+
+    def read_txt_file(self):
+        with open(self.input_filename, "r", encoding="utf-8") as infile:
+            return self.clean_text(infile.read()).splitlines()
+
+    def read_doc_file(self):
+        text = docx2txt.process(self.input_filename)
+        return self.clean_text(text).splitlines()
+
+    def read_rtf_file(self):
+        with open(self.input_filename, "r", encoding="utf-8") as file:
+            rtf_text = file.read()
+        plain_text = rtf_to_text(rtf_text)
+        return self.clean_text(plain_text).splitlines()
+
+    def clean_text(self, text):
+        # Remove any non-printable characters except newlines
+        text = "".join(char for char in text if char.isprintable() or char == "\n")
+        # Replace multiple newlines with a single newline
+        text = re.sub(r"\n{2,}", "\n", text)
+        # Remove leading/trailing whitespace from each line
+        text = "\n".join(line.strip() for line in text.splitlines())
+        return text
 
     def find_best_split_point(self, line):
         """
@@ -84,7 +118,7 @@ class KaraokeLyricsProcessor:
 
         # If the line is still too long, find the last space before max_line_length
         if len(line) > self.max_line_length:
-            last_space = line.rfind(' ', 0, self.max_line_length)
+            last_space = line.rfind(" ", 0, self.max_line_length)
             if last_space != -1:
                 self.logger.debug(f"Splitting at last space before max_line_length: {last_space}")
                 return last_space
@@ -111,6 +145,16 @@ class KaraokeLyricsProcessor:
         self.logger.debug(f"Text after replacing non-printable spaces: {cleaned_text}")
         return cleaned_text
 
+    def clean_punctuation_spacing(self, text):
+        """
+        Remove unnecessary spaces before punctuation marks.
+        """
+        self.logger.debug(f"Cleaning punctuation spacing in: {text}")
+        # Remove space before comma, period, exclamation mark, question mark, colon, and semicolon
+        cleaned_text = re.sub(r"\s+([,\.!?:;])", r"\1", text)
+        self.logger.debug(f"Text after cleaning punctuation spacing: {cleaned_text}")
+        return cleaned_text
+
     def process_line(self, line):
         """
         Process a single line to ensure it's within the maximum length,
@@ -118,6 +162,8 @@ class KaraokeLyricsProcessor:
         """
         # Replace non-printable spaces at the beginning
         line = self.replace_non_printable_spaces(line)
+        # Clean up punctuation spacing
+        line = self.clean_punctuation_spacing(line)
 
         processed_lines = []
         iteration_count = 0
@@ -180,8 +226,9 @@ class KaraokeLyricsProcessor:
 
         processed_lyrics_text = "\n".join(lyrics_lines)
 
-        # Final pass to replace any remaining non-printable spaces
+        # Final pass to replace any remaining non-printable spaces and clean punctuation
         processed_lyrics_text = self.replace_non_printable_spaces(processed_lyrics_text)
+        processed_lyrics_text = self.clean_punctuation_spacing(processed_lyrics_text)
 
         self.processed_lyrics_text = processed_lyrics_text
         pyperclip.copy(processed_lyrics_text)
@@ -191,8 +238,11 @@ class KaraokeLyricsProcessor:
         return processed_lyrics_text
 
     def write_to_output_file(self):
+        # Ensure the output filename has a .txt extension
+        base, _ = os.path.splitext(self.output_filename)
+        self.output_filename = f"{base}.txt"
 
-        with open(self.output_filename, "w") as outfile:
+        with open(self.output_filename, "w", encoding="utf-8") as outfile:
             outfile.write(self.processed_lyrics_text)
 
         self.logger.info(f"Processed lyrics written to output file {self.output_filename}")
