@@ -196,33 +196,37 @@ class KaraokeLyricsProcessor:
         Process a single line to ensure it's within the maximum length,
         handle parentheses, and replace non-printable spaces.
         """
-        # Replace non-printable spaces at the beginning
         line = self.replace_non_printable_spaces(line)
-        # Clean up punctuation spacing
         line = self.clean_punctuation_spacing(line)
-        # Fix commas inside quotes
         line = self.fix_commas_inside_quotes(line)
 
         processed_lines = []
         iteration_count = 0
         max_iterations = 100  # Failsafe limit
 
-        while len(line) > self.max_line_length:
-            if iteration_count > max_iterations:
-                self.logger.error(f"Maximum iterations exceeded in process_line for line: {line}")
-                break
-
+        while len(line) > self.max_line_length and iteration_count < max_iterations:
             # Check if the line contains parentheses
             if "(" in line and ")" in line:
                 start_paren = line.find("(")
-                end_paren = line.find(")") + 1
+                end_paren = self.find_matching_paren(line, start_paren)
                 if end_paren < len(line) and line[end_paren] == ",":
                     end_paren += 1
 
+                # Process text before parentheses if it exists
                 if start_paren > 0:
-                    processed_lines.append(line[:start_paren].strip())
-                processed_lines.append(line[start_paren:end_paren].strip())
-                line = line[end_paren:].strip()
+                    before_paren = line[:start_paren].strip()
+                    processed_lines.extend(self.split_line(before_paren))
+
+                # Process text within parentheses
+                paren_content = line[start_paren : end_paren + 1].strip()
+                if len(paren_content) > self.max_line_length:
+                    # Split the content within parentheses if it's too long
+                    split_paren_content = self.split_line(paren_content)
+                    processed_lines.extend(split_paren_content)
+                else:
+                    processed_lines.append(paren_content)
+
+                line = line[end_paren + 1 :].strip()
             else:
                 split_point = self.find_best_split_point(line)
                 processed_lines.append(line[:split_point].strip())
@@ -230,10 +234,45 @@ class KaraokeLyricsProcessor:
 
             iteration_count += 1
 
-        if line:  # Add the remaining part if not empty
-            processed_lines.append(line)
+        if line:  # Add any remaining part
+            processed_lines.extend(self.split_line(line))
+
+        if iteration_count >= max_iterations:
+            self.logger.error(f"Maximum iterations exceeded in process_line for line: {line}")
 
         return processed_lines
+
+    def find_matching_paren(self, line, start_index):
+        """
+        Find the index of the matching closing parenthesis for the opening parenthesis at start_index.
+        """
+        stack = 0
+        for i in range(start_index, len(line)):
+            if line[i] == "(":
+                stack += 1
+            elif line[i] == ")":
+                stack -= 1
+                if stack == 0:
+                    return i
+        return -1  # No matching parenthesis found
+
+    def split_line(self, line):
+        """
+        Split a line into multiple lines if it exceeds the maximum length.
+        """
+        if len(line) <= self.max_line_length:
+            return [line]
+
+        split_lines = []
+        while len(line) > self.max_line_length:
+            split_point = self.find_best_split_point(line)
+            split_lines.append(line[:split_point].strip())
+            line = line[split_point:].strip()
+
+        if line:
+            split_lines.append(line)
+
+        return split_lines
 
     def process(self):
         self.logger.info(f"Processing input lyrics from {self.input_filename}")

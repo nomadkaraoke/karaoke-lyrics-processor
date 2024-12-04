@@ -87,6 +87,98 @@ class TestKaraokeLyricsProcessor(unittest.TestCase):
 
         self.assertEqual(result.strip(), expected_output.strip())
 
+    def test_long_content_within_parentheses(self):
+        input_lyrics = (
+            "This line has a very long (content inside parentheses that exceeds the maximum line length) and should be split correctly."
+        )
+        expected_output = [
+            "This line has a very long",
+            "(content inside parentheses that",
+            "exceeds the maximum line length)",
+            "and should be split correctly.",
+        ]
+
+        self.processor.input_lyrics_lines = [input_lyrics]
+        result = self.processor.process()
+
+        self.assertEqual(result, "\n".join(expected_output))
+
+    def test_long_content_within_parentheses_at_start(self):
+        input_lyrics = (
+            "(This is a very long content inside parentheses that exceeds the maximum line length) and should be split correctly."
+        )
+        expected_output = [
+            "(This is a very long content inside",
+            "parentheses that exceeds",
+            "the maximum line length)",
+            "and should be split correctly.",
+        ]
+
+        self.processor.input_lyrics_lines = [input_lyrics]
+        result = self.processor.process()
+
+        self.assertEqual(result, "\n".join(expected_output))
+
+    def test_long_content_within_parentheses_at_end(self):
+        input_lyrics = (
+            "This line should be split correctly with (a very long content inside parentheses that exceeds the maximum line length)."
+        )
+        expected_output = [
+            "This line should",
+            "be split correctly with",
+            "(a very long content inside",
+            "parentheses that exceeds",
+            "the maximum line length).",
+        ]
+
+        self.processor.input_lyrics_lines = [input_lyrics]
+        result = self.processor.process()
+
+        self.assertEqual(result, "\n".join(expected_output))
+
+    def test_long_content_within_nested_parentheses(self):
+        input_lyrics = "This line has (nested (parentheses with very long content that exceeds the maximum line length)) and should be split correctly."
+        expected_output = [
+            "This line has",
+            "(nested (parentheses with very long",
+            "content that exceeds",
+            "the maximum line length))",
+            "and should be split correctly.",
+        ]
+
+        self.processor.input_lyrics_lines = [input_lyrics]
+        result = self.processor.process()
+
+        self.assertEqual(result, "\n".join(expected_output))
+
+    def test_split_line_function(self):
+        # Directly test the split_line function
+        long_line = "This is a very long line that should be split into multiple lines because it exceeds the maximum line length."
+        expected_output = [
+            "This is a very long line that",
+            "should be split into multiple lines",
+            "because it exceeds",
+            "the maximum line length.",
+        ]
+
+        result = self.processor.split_line(long_line)
+        self.assertEqual(result, expected_output)
+
+    def test_find_matching_paren(self):
+        # Test cases for find_matching_paren
+        test_cases = [
+            ("(a (b) c)", 0, 8),  # Simple nested
+            ("(a (b (c) d) e)", 0, 14),  # More complex nesting
+            ("(a (b (c) d) e)", 3, 11),  # Start from inner parenthesis
+            ("No parentheses", 0, -1),  # No parentheses
+            ("(a (b (c) d) e", 0, -1),  # Unmatched parenthesis
+        ]
+
+        for line, start_index, expected in test_cases:
+            with self.subTest(line=line, start_index=start_index):
+                result = self.processor.find_matching_paren(line, start_index)
+                self.assertEqual(result, expected)
+
 
 if __name__ == "__main__":
     unittest.main()
