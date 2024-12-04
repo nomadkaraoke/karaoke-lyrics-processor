@@ -151,8 +151,8 @@ class KaraokeLyricsProcessor:
         self.logger.debug(f"Replacing non-printable spaces in: {repr(text)}")
 
         # Log each character and its Unicode code point
-        for i, char in enumerate(text):
-            self.logger.debug(f"Character at position {i}: {repr(char)} (Unicode: U+{ord(char):04X})")
+        # for i, char in enumerate(text):
+        #     self.logger.debug(f"Character at position {i}: {repr(char)} (Unicode: U+{ord(char):04X})")
 
         # Define a pattern for space-like characters, including tabs and other whitespace, but excluding newlines
         space_pattern = r"[^\S\n\r]|\u00A0|\u1680|\u2000-\u200A|\u202F|\u205F|\u3000"
