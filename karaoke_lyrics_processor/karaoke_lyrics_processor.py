@@ -181,6 +181,16 @@ class KaraokeLyricsProcessor:
         self.logger.debug(f"Text after cleaning punctuation spacing: {cleaned_text}")
         return cleaned_text
 
+    def fix_commas_inside_quotes(self, text):
+        """
+        Move commas inside quotes to after the closing quote.
+        """
+        self.logger.debug(f"Fixing commas inside quotes in: {text}")
+        # Use regex to find patterns where a comma is inside quotes and move it outside
+        fixed_text = re.sub(r'(".*?)(,)(\s*")', r"\1\3\2", text)
+        self.logger.debug(f"Text after fixing commas inside quotes: {fixed_text}")
+        return fixed_text
+
     def process_line(self, line):
         """
         Process a single line to ensure it's within the maximum length,
@@ -190,6 +200,8 @@ class KaraokeLyricsProcessor:
         line = self.replace_non_printable_spaces(line)
         # Clean up punctuation spacing
         line = self.clean_punctuation_spacing(line)
+        # Fix commas inside quotes
+        line = self.fix_commas_inside_quotes(line)
 
         processed_lines = []
         iteration_count = 0

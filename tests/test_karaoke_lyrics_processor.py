@@ -60,6 +60,33 @@ class TestKaraokeLyricsProcessor(unittest.TestCase):
 
         self.assertEqual(result, expected_output)
 
+    def test_commas_inside_quotes(self):
+        input_lyrics = 'Mama told me, "Don\'t be shy," Seno said "Let\'s get this," watch how fast I switch this'
+        expected_output = 'Mama told me, "Don\'t be shy",\nSeno said "Let\'s get this",\nwatch how fast I switch this'
+
+        self.processor.input_lyrics_lines = [input_lyrics]
+        result = self.processor.process()
+
+        self.assertEqual(result.strip(), expected_output.strip())
+
+    def test_commas_inside_quotes_with_multiple_quotes(self):
+        input_lyrics = '"Hello," she said, "how are you," and smiled.'
+        expected_output = '"Hello",\nshe said, "how are you", and smiled.'
+
+        self.processor.input_lyrics_lines = [input_lyrics]
+        result = self.processor.process()
+
+        self.assertEqual(result.strip(), expected_output.strip())
+
+    def test_commas_inside_quotes_with_no_commas(self):
+        input_lyrics = 'He said "Hello there" and waved.'
+        expected_output = 'He said "Hello there" and waved.'
+
+        self.processor.input_lyrics_lines = [input_lyrics]
+        result = self.processor.process()
+
+        self.assertEqual(result.strip(), expected_output.strip())
+
 
 if __name__ == "__main__":
     unittest.main()
