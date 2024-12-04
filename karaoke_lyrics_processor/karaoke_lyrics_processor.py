@@ -5,6 +5,7 @@ import unicodedata
 import docx2txt
 from striprtf.striprtf import rtf_to_text
 import os
+import codecs
 
 
 class KaraokeLyricsProcessor:
@@ -46,6 +47,8 @@ class KaraokeLyricsProcessor:
     def read_input_file(self):
         file_extension = os.path.splitext(self.input_filename)[1].lower()
 
+        self.logger.debug(f"Reading input file: {self.input_filename}")
+
         if file_extension == ".txt":
             return self.read_txt_file()
         elif file_extension in [".docx", ".doc"]:
@@ -56,8 +59,14 @@ class KaraokeLyricsProcessor:
             raise ValueError(f"Unsupported file format: {file_extension}")
 
     def read_txt_file(self):
-        with open(self.input_filename, "r", encoding="utf-8") as infile:
-            return self.clean_text(infile.read()).splitlines()
+        with codecs.open(self.input_filename, "r", encoding="utf-8") as infile:
+            content = infile.read()
+        self.logger.debug(f"Raw content read from file: {repr(content)}")
+        lines = content.splitlines()
+        self.logger.debug(f"Number of lines read: {len(lines)}")
+        for i, line in enumerate(lines):
+            self.logger.debug(f"Line {i}: {repr(line)}")
+        return self.clean_text(content).splitlines()
 
     def read_doc_file(self):
         text = docx2txt.process(self.input_filename)
@@ -70,13 +79,17 @@ class KaraokeLyricsProcessor:
         return self.clean_text(plain_text).splitlines()
 
     def clean_text(self, text):
-        # Remove any non-printable characters except newlines
-        text = "".join(char for char in text if char.isprintable() or char == "\n")
+        self.logger.debug(f"Cleaning text: {repr(text)}")
+        # Remove any non-printable characters except newlines and U+2005 (four-per-em space)
+        cleaned = "".join(char for char in text if char.isprintable() or char in ["\n", "\u2005"])
+        self.logger.debug(f"Text after removing non-printable characters: {repr(cleaned)}")
         # Replace multiple newlines with a single newline
-        text = re.sub(r"\n{2,}", "\n", text)
+        cleaned = re.sub(r"\n{2,}", "\n", cleaned)
+        self.logger.debug(f"Text after replacing multiple newlines: {repr(cleaned)}")
         # Remove leading/trailing whitespace from each line
-        text = "\n".join(line.strip() for line in text.splitlines())
-        return text
+        cleaned = "\n".join(line.strip() for line in cleaned.splitlines())
+        self.logger.debug(f"Final cleaned text: {repr(cleaned)}")
+        return cleaned
 
     def find_best_split_point(self, line):
         """
@@ -135,15 +148,28 @@ class KaraokeLyricsProcessor:
         Replace non-printable space-like characters, tabs, and other whitespace with regular spaces,
         excluding newline characters.
         """
-        self.logger.debug(f"Replacing non-printable spaces in: {text}")
+        self.logger.debug(f"Replacing non-printable spaces in: {repr(text)}")
+
+        # Log each character and its Unicode code point
+        for i, char in enumerate(text):
+            self.logger.debug(f"Character at position {i}: {repr(char)} (Unicode: U+{ord(char):04X})")
+
         # Define a pattern for space-like characters, including tabs and other whitespace, but excluding newlines
         space_pattern = r"[^\S\n\r]|\u00A0|\u1680|\u2000-\u200A|\u202F|\u205F|\u3000"
+
         # Replace matched characters with a regular space
         cleaned_text = re.sub(space_pattern, " ", text)
+
+        # Log the result of the replacement
+        self.logger.debug(f"Text after replacing non-printable spaces: {repr(cleaned_text)}")
+
         # Remove leading/trailing spaces and collapse multiple spaces into one, preserving newlines
-        cleaned_text = re.sub(r" +", " ", cleaned_text).strip()
-        self.logger.debug(f"Text after replacing non-printable spaces: {cleaned_text}")
-        return cleaned_text
+        final_text = re.sub(r" +", " ", cleaned_text).strip()
+
+        # Log the final result
+        self.logger.debug(f"Final text after cleaning: {repr(final_text)}")
+
+        return final_text
 
     def clean_punctuation_spacing(self, text):
         """
