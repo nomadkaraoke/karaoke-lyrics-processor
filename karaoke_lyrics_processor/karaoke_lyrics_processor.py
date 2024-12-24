@@ -1,7 +1,6 @@
 import re
 import logging
 import pyperclip
-import unicodedata
 import docx2txt
 from striprtf.striprtf import rtf_to_text
 import os
@@ -308,9 +307,13 @@ class KaraokeLyricsProcessor:
         processed_lyrics_text = self.clean_punctuation_spacing(processed_lyrics_text)
 
         self.processed_lyrics_text = processed_lyrics_text
-        pyperclip.copy(processed_lyrics_text)
-
-        self.logger.info(f"Processed lyrics copied to clipboard.")
+        
+        # Try to copy to clipboard, but don't fail if it's not available
+        try:
+            pyperclip.copy(processed_lyrics_text)
+            self.logger.info("Processed lyrics copied to clipboard.")
+        except pyperclip.PyperclipException as e:
+            self.logger.warning(f"Could not copy to clipboard: {str(e)}")
 
         return processed_lyrics_text
 
