@@ -60,11 +60,8 @@ class KaraokeLyricsProcessor:
     def read_txt_file(self):
         with codecs.open(self.input_filename, "r", encoding="utf-8") as infile:
             content = infile.read()
-        self.logger.debug(f"Raw content read from file: {repr(content)}")
         lines = content.splitlines()
-        self.logger.debug(f"Number of lines read: {len(lines)}")
-        for i, line in enumerate(lines):
-            self.logger.debug(f"Line {i}: {repr(line)}")
+        self.logger.debug(f"Read {len(lines)} lines from {self.input_filename}")
         return self.clean_text(content).splitlines()
 
     def read_doc_file(self):
@@ -78,16 +75,29 @@ class KaraokeLyricsProcessor:
         return self.clean_text(plain_text).splitlines()
 
     def clean_text(self, text):
-        self.logger.debug(f"Cleaning text: {repr(text)}")
-        # Remove any non-printable characters except newlines and U+2005 (four-per-em space)
+        # Remove any non-printable characters except newlines and U+2005
+        original_len = len(text)
         cleaned = "".join(char for char in text if char.isprintable() or char in ["\n", "\u2005"])
-        self.logger.debug(f"Text after removing non-printable characters: {repr(cleaned)}")
+        if len(cleaned) != original_len:
+            self.logger.debug(f"Removed {original_len - len(cleaned)} non-printable characters")
+
         # Replace multiple newlines with a single newline
+        newlines_before = cleaned.count("\n")
         cleaned = re.sub(r"\n{2,}", "\n", cleaned)
-        self.logger.debug(f"Text after replacing multiple newlines: {repr(cleaned)}")
+        newlines_after = cleaned.count("\n")
+        if newlines_before != newlines_after:
+            self.logger.debug(f"Consolidated {newlines_before - newlines_after} extra newlines")
+
         # Remove leading/trailing whitespace from each line
-        cleaned = "\n".join(line.strip() for line in cleaned.splitlines())
-        self.logger.debug(f"Final cleaned text: {repr(cleaned)}")
+        lines_before = cleaned.splitlines()
+        cleaned = "\n".join(line.strip() for line in lines_before)
+        lines_after = cleaned.splitlines()
+
+        # Count lines that changed due to stripping
+        changed_lines = sum(1 for before, after in zip(lines_before, lines_after) if before != after)
+        if changed_lines > 0:
+            self.logger.debug(f"Stripped whitespace from {changed_lines} lines")
+
         return cleaned
 
     def find_best_split_point(self, line):
@@ -147,8 +157,6 @@ class KaraokeLyricsProcessor:
         Replace non-printable space-like characters, tabs, and other whitespace with regular spaces,
         excluding newline characters.
         """
-        self.logger.debug(f"Replacing non-printable spaces in: {repr(text)}")
-
         # Log each character and its Unicode code point
         # for i, char in enumerate(text):
         #     self.logger.debug(f"Character at position {i}: {repr(char)} (Unicode: U+{ord(char):04X})")
@@ -159,14 +167,8 @@ class KaraokeLyricsProcessor:
         # Replace matched characters with a regular space
         cleaned_text = re.sub(space_pattern, " ", text)
 
-        # Log the result of the replacement
-        self.logger.debug(f"Text after replacing non-printable spaces: {repr(cleaned_text)}")
-
         # Remove leading/trailing spaces and collapse multiple spaces into one, preserving newlines
         final_text = re.sub(r" +", " ", cleaned_text).strip()
-
-        # Log the final result
-        self.logger.debug(f"Final text after cleaning: {repr(final_text)}")
 
         return final_text
 
@@ -174,20 +176,20 @@ class KaraokeLyricsProcessor:
         """
         Remove unnecessary spaces before punctuation marks.
         """
-        self.logger.debug(f"Cleaning punctuation spacing in: {text}")
+        self.logger.debug(f"Cleaning punctuation spacing")
         # Remove space before comma, period, exclamation mark, question mark, colon, and semicolon
         cleaned_text = re.sub(r"\s+([,\.!?:;])", r"\1", text)
-        self.logger.debug(f"Text after cleaning punctuation spacing: {cleaned_text}")
+
         return cleaned_text
 
     def fix_commas_inside_quotes(self, text):
         """
         Move commas inside quotes to after the closing quote.
         """
-        self.logger.debug(f"Fixing commas inside quotes in: {text}")
+        self.logger.debug(f"Fixing commas inside quotes")
         # Use regex to find patterns where a comma is inside quotes and move it outside
         fixed_text = re.sub(r'(".*?)(,)(\s*")', r"\1\3\2", text)
-        self.logger.debug(f"Text after fixing commas inside quotes: {fixed_text}")
+
         return fixed_text
 
     def process_line(self, line):
@@ -307,7 +309,7 @@ class KaraokeLyricsProcessor:
         processed_lyrics_text = self.clean_punctuation_spacing(processed_lyrics_text)
 
         self.processed_lyrics_text = processed_lyrics_text
-        
+
         # Try to copy to clipboard, but don't fail if it's not available
         try:
             pyperclip.copy(processed_lyrics_text)
