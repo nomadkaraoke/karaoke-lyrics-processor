@@ -5,6 +5,7 @@ import docx2txt
 from striprtf.striprtf import rtf_to_text
 import os
 import codecs
+import textract  # Add textract import
 
 
 class KaraokeLyricsProcessor:
@@ -65,7 +66,15 @@ class KaraokeLyricsProcessor:
         return self.clean_text(content).splitlines()
 
     def read_doc_file(self):
-        text = docx2txt.process(self.input_filename)
+        try:
+            text = docx2txt.process(self.input_filename)
+        except Exception as e:
+            self.logger.debug(f"docx2txt failed to read file, trying textract: {str(e)}")
+            try:
+                # Use textract as fallback for .doc files
+                text = textract.process(self.input_filename).decode('utf-8')
+            except Exception as e2:
+                raise ValueError(f"Failed to read doc file with both docx2txt and textract: {str(e2)}")
         return self.clean_text(text).splitlines()
 
     def read_rtf_file(self):
