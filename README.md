@@ -1,9 +1,9 @@
 # Karaoke Lyrics Processor 🎶 ✍️
 
 ![PyPI - Version](https://img.shields.io/pypi/v/karaoke-lyrics-processor)
-![Test Coverage](https://codecov.io/gh/nomadkaraoke/karaoke-lyrics-processor/branch/main/graph/badge.svg)
-![Python Version](https://img.shields.io/badge/python-3.9+-blue)
+![Python Version](https://img.shields.io/badge/python-3.10+-blue)
 ![Tests](https://github.com/nomadkaraoke/karaoke-lyrics-processor/workflows/Test%20and%20Publish/badge.svg)
+![Test Coverage](https://codecov.io/gh/nomadkaraoke/karaoke-lyrics-processor/branch/main/graph/badge.svg)
 
 Karaoke Lyrics Processor is a tool to prepare song lyrics for karaoke video production. 
 
