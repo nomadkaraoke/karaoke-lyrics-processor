@@ -169,7 +169,7 @@ cd karaoke-lyrics-processor
 pip install -e ".[dev]"
 
 # Run tests
-python run_tests.py
+pytest
 ```
 
 - This project is 100% open-source and free for anyone to use and modify as they wish
