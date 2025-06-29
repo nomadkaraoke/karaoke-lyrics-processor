@@ -59,9 +59,10 @@ jobs:
           poetry run pytest --cov=karaoke_lyrics_processor --cov-report=xml --cov-report=term-missing --cov-fail-under=90 -v
           
       - name: Upload coverage reports
+        if: matrix.python-version == '3.13'
         uses: codecov/codecov-action@v5
         with:
-          use_oidc: true
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           flags: unittests
           name: codecov-umbrella
