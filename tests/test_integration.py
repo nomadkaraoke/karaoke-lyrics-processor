@@ -313,28 +313,27 @@ class TestIntegration(unittest.TestCase):
         self.assertIn("companions tonight", result_lower)
 
         # Verify that long lines were actually split
-        original_lines = [line.strip() for line in realistic_song.split('\n') if line.strip()]
+        original_lines = [line.strip() for line in realistic_song.split("\n") if line.strip()]
         long_original_lines = [line for line in original_lines if len(line) > 36]
         self.assertGreater(len(long_original_lines), 0, "Test should have lines longer than 36 characters")
 
         # Verify processing worked - should have more lines due to splitting
         processed_lines = [line.strip() for line in lines if line.strip()]
-        self.assertGreater(len(processed_lines), len(original_lines), 
-                          "Processed text should have more lines due to splitting")
+        self.assertGreater(len(processed_lines), len(original_lines), "Processed text should have more lines due to splitting")
 
         # Verify comma-based splitting worked
-        comma_lines = [line for line in original_lines if ',' in line and len(line) > 36]
+        comma_lines = [line for line in original_lines if "," in line and len(line) > 36]
         if comma_lines:
             # At least some comma-containing lines should have been split
-            comma_splits_found = any(',' in line and len(line) <= 36 for line in processed_lines)
+            comma_splits_found = any("," in line and len(line) <= 36 for line in processed_lines)
             self.assertTrue(comma_splits_found, "Should find evidence of comma-based splitting")
 
         # Verify parentheses handling
-        paren_lines = [line for line in original_lines if '(' in line and ')' in line]
+        paren_lines = [line for line in original_lines if "(" in line and ")" in line]
         if paren_lines:
             # Parentheses content should be preserved
-            self.assertIn('(', result)
-            self.assertIn(')', result)
+            self.assertIn("(", result)
+            self.assertIn(")", result)
 
         # Verify repetitive ending structure is handled correctly
         repeat_count = result_lower.count("companions tonight")
@@ -365,44 +364,39 @@ class TestIntegration(unittest.TestCase):
 
         try:
             # Process with same settings as real-world usage
-            processor = KaraokeLyricsProcessor(
-                input_filename=input_filename, 
-                output_filename=output_filename, 
-                max_line_length=36
-            )
+            processor = KaraokeLyricsProcessor(input_filename=input_filename, output_filename=output_filename, max_line_length=36)
 
             result = processor.process()
             processor.write_to_output_file()
 
             # Verify file was created and matches result
             self.assertTrue(os.path.exists(output_filename))
-            
+
             with open(output_filename, "r", encoding="utf-8") as f:
                 file_content = f.read()
-            
+
             self.assertEqual(file_content, result)
 
             # Verify real-world quality requirements
             lines = file_content.split("\n")
-            
+
             # All lines must be within length limit
             for line in lines:
                 if line.strip():
                     self.assertLessEqual(len(line), 36, f"Line too long: '{line}' ({len(line)} chars)")
-            
+
             # Should preserve structure markers
             self.assertIn("Chorus", file_content)
-            
+
             # Should preserve key content
             self.assertIn("street", file_content.lower())
             self.assertIn("music", file_content.lower())
-            
+
             # Should have improved readability through proper splitting
-            long_lines_in_original = len([line for line in test_content.split('\n') if len(line.strip()) > 36])
+            long_lines_in_original = len([line for line in test_content.split("\n") if len(line.strip()) > 36])
             long_lines_in_result = len([line for line in lines if len(line.strip()) > 36])
-            
-            self.assertLess(long_lines_in_result, long_lines_in_original, 
-                           "Processing should reduce number of overly long lines")
+
+            self.assertLess(long_lines_in_result, long_lines_in_original, "Processing should reduce number of overly long lines")
 
         finally:
             # Cleanup
