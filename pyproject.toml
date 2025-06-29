@@ -11,12 +11,12 @@ repository = "https://github.com/nomadkaraoke/karaoke-lyrics-processor"
 documentation = "https://github.com/nomadkaraoke/karaoke-lyrics-processor/blob/main/README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = ">=3.10,<4.0"
 pyperclip = ">=1.8"
 python-docx = ">=1"
 striprtf = ">=0.0.27"
 docx2txt = ">=0.8"
-textract = ">=1.6.5"
+textract-py3 = ">=2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = ">=23"
