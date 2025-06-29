@@ -9,6 +9,40 @@ Karaoke Lyrics Processor is a tool to prepare song lyrics for karaoke video prod
 
 It processes lyrics by intelligently splitting long lines, handling parentheses, cleaning punctuation, and ensuring that each line fits within a specified maximum length. This tool is especially useful for creating karaoke tracks where timing and line length are crucial for readability.
 
+## 📝 Example
+
+Here's what the tool does - it transforms lyrics with long lines into karaoke-friendly format, with a configurable maximum line length (default 36 characters):
+
+**Input:**
+```
+That's how the story begins
+We walk back to the old place
+You check your phone for messages
+And try to make sense of it all
+And if the room is crowded, that's even better
+Because we know we're going to be here until dawn
+But if you're concerned about the weather outside
+Then you chose the wrong venue to spend your evening
+```
+
+**Output (with 36 character limit):**
+```
+That's how the story begins
+We walk back to the old place
+You check your phone for messages
+And try to make sense of it all
+And if the room is crowded,
+that's even better
+Because we know we're going to be
+here until dawn
+But if you're concerned about the
+weather outside
+Then you chose the wrong venue to
+spend your evening
+```
+
+The tool intelligently splits long lines at natural break points (commas, conjunctions, word boundaries) while preserving the song's structure and meaning.
+
 ## ✨ Features
 
 ### Core Processing
