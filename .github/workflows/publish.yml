@@ -1,15 +1,74 @@
-name: Auto-publish
+name: Test and Publish
 
-on: [push, workflow_dispatch]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  # Auto-publish when version is increased
-  publish-pypi:
-    # Only publish on `main` branch
-    if: github.ref == 'refs/heads/main'
+  # Run comprehensive test suite
+  test:
     runs-on: ubuntu-latest
-    permissions: # Don't forget permissions
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y antiword poppler-utils tesseract-ocr
+          
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+        
+      - name: Install project
+        run: poetry install --no-interaction
+        
+      - name: Run linting
+        run: |
+          poetry run black --check .
+          
+      - name: Run comprehensive test suite
+        run: |
+          poetry run pytest --cov=karaoke_lyrics_processor --cov-report=xml --cov-report=term-missing --cov-fail-under=90 -v
+          
+      - name: Upload coverage reports
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+  # Auto-publish when version is increased and tests pass
+  publish-pypi:
+    needs: test  # Only run if tests pass
+    # Only publish on `main` branch pushes (not PRs)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
       contents: write
+      id-token: write  # Required for trusted publishing
 
     steps:
       - uses: etils-actions/pypi-auto-publish@v1

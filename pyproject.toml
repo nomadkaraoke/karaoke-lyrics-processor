@@ -1,17 +1,17 @@
 [tool.poetry]
 name = "karaoke-lyrics-processor"
-version = "0.5.0"
+version = "0.6.0"
 description = "Process song lyrics to prepare them for karaoke video production, e.g. by splitting long lines"
 authors = ["Andrew Beveridge <andrew@beveridge.uk>"]
 license = "MIT"
 readme = "README.md"
 packages = [{ include = "karaoke_lyrics_processor" }]
-homepage = "https://github.com/karaokenerds/karaoke-lyrics-processor"
-repository = "https://github.com/karaokenerds/karaoke-lyrics-processor"
-documentation = "https://github.com/karaokenerds/karaoke-lyrics-processor/blob/main/README.md"
+homepage = "https://github.com/nomadkaraoke/karaoke-lyrics-processor"
+repository = "https://github.com/nomadkaraoke/karaoke-lyrics-processor"
+documentation = "https://github.com/nomadkaraoke/karaoke-lyrics-processor/blob/main/README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.9"
 pyperclip = ">=1.8"
 python-docx = ">=1"
 striprtf = ">=0.0.27"
@@ -20,8 +20,10 @@ textract = ">=1.6.5"
 
 [tool.poetry.group.dev.dependencies]
 black = ">=23"
-poetry = "*"
 pytest = ">=8"
+pytest-cov = ">=4.0"
+pytest-mock = ">=3.10"
+coverage = ">=7.0"
 
 [tool.poetry.scripts]
 karaoke-lyrics-processor = 'karaoke_lyrics_processor.cli:main'
@@ -32,6 +34,35 @@ line-length = 140
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
+addopts = [
+    "--cov=karaoke_lyrics_processor",
+    "--cov-report=html",
+    "--cov-report=term-missing",
+    "--cov-fail-under=90"
+]
+
+[tool.coverage.run]
+source = ["karaoke_lyrics_processor"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod"
+]
 
 [build-system]
 requires = ["poetry-core"]

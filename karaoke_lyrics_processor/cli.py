@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 import argparse
 import logging
-import pkg_resources
+
+try:
+    from importlib.metadata import version
+except ImportError:
+    # Fallback for Python < 3.8
+    from importlib_metadata import version
 from karaoke_lyrics_processor import KaraokeLyricsProcessor
 
 
@@ -17,7 +22,7 @@ def main():
         formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=50),
     )
 
-    package_version = pkg_resources.get_distribution("karaoke-lyrics-processor").version
+    package_version = version("karaoke-lyrics-processor")
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {package_version}")
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode, setting log level to DEBUG.")
     parser.add_argument("-o", "--output", type=str, help="Optional: Specify the output filename for the processed lyrics.")

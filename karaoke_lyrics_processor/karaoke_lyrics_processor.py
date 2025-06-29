@@ -72,7 +72,7 @@ class KaraokeLyricsProcessor:
             self.logger.debug(f"docx2txt failed to read file, trying textract: {str(e)}")
             try:
                 # Use textract as fallback for .doc files
-                text = textract.process(self.input_filename).decode('utf-8')
+                text = textract.process(self.input_filename).decode("utf-8")
             except Exception as e2:
                 raise ValueError(f"Failed to read doc file with both docx2txt and textract: {str(e2)}")
         return self.clean_text(text).splitlines()
@@ -171,7 +171,7 @@ class KaraokeLyricsProcessor:
         #     self.logger.debug(f"Character at position {i}: {repr(char)} (Unicode: U+{ord(char):04X})")
 
         # Define a pattern for space-like characters, including tabs and other whitespace, but excluding newlines
-        space_pattern = r"[^\S\n\r]|\u00A0|\u1680|\u2000-\u200A|\u202F|\u205F|\u3000"
+        space_pattern = r"[^\S\n]|\u00A0|\u1680|\u2000-\u200A|\u202F|\u205F|\u3000"
 
         # Replace matched characters with a regular space
         cleaned_text = re.sub(space_pattern, " ", text)
@@ -239,6 +239,9 @@ class KaraokeLyricsProcessor:
                 line = line[end_paren + 1 :].strip()
             else:
                 split_point = self.find_best_split_point(line)
+                # Ensure we make progress - if split_point is 0 or too small, force a reasonable split
+                if split_point <= 0:
+                    split_point = min(self.max_line_length, len(line))
                 processed_lines.append(line[:split_point].strip())
                 line = line[split_point:].strip()
 
@@ -276,6 +279,9 @@ class KaraokeLyricsProcessor:
         split_lines = []
         while len(line) > self.max_line_length:
             split_point = self.find_best_split_point(line)
+            # Ensure we make progress - if split_point is 0 or too small, force a reasonable split
+            if split_point <= 0:
+                split_point = min(self.max_line_length, len(line))
             split_lines.append(line[:split_point].strip())
             line = line[split_point:].strip()
 
@@ -300,6 +306,8 @@ class KaraokeLyricsProcessor:
 
             all_processed = True
             new_lyrics = []
+            previous_line_count = len(lyrics_lines)
+
             for line in lyrics_lines:
                 line = line.strip()
                 processed = self.process_line(line)
@@ -308,6 +316,11 @@ class KaraokeLyricsProcessor:
                     all_processed = False
 
             lyrics_lines = new_lyrics
+
+            # Safety check: if no progress is being made, break out of the loop
+            if len(lyrics_lines) == previous_line_count and not all_processed:
+                self.logger.warning("No progress made in processing, forcing completion to avoid infinite loop")
+                break
 
             iteration_count += 1
 
